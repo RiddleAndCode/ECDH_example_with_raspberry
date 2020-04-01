@@ -60,7 +60,6 @@ class SharedSecret:
 
     def decrypt(self, message):
         return self._aes_128_gcm().decrypt(message)[:-16]
-    
     def _aes_128_gcm(self):
         key_bytes = HKDF(self.key_material, 16, b'', SHA256)
         return AES.new(key_bytes, AES.MODE_GCM, nonce=bytes(12))
@@ -80,7 +79,7 @@ class SealKeyPair:
     def __init__(self, seal, key_index=0):
         self.key_index = key_index
         self.seal = seal
-        self.curve = 'P-256' 
+        self.curve = 'P-256'
 
     def sign(self, message):
         # TODO use seal hash function
@@ -96,8 +95,8 @@ class SealKeyPair:
 
 # config
 current_dir = os.path.dirname(os.path.abspath(__file__))
-seal = SEAL(current_dir + "/../libs/raspberry/v1/libseadyn.so")
-service = "http://192.168.23.26:4000"
+seal = SEAL(current_dir + "/libseadyn.so")
+service = "https://yjlwd381s5.execute-api.eu-central-1.amazonaws.com/dev/devices"
 server_pub_key = "BJzNphRprGYTt7ioyifaRqMQQW758qBhZBAlMo6tUbo4C9GeQLUsI6CvjtFaVWXKDKLqp9RUUaHVeEX0RcX/GM4="
 
 # get static key pairs
@@ -110,26 +109,28 @@ ephemeral_public_key = my_ephemeral.key.public_key_bytes()
 signature = my_key_pair.sign(ephemeral_public_key)
 
 # get server ephemeral public key
-headers = {'X-PublicKey': b64encode(my_key_pair.public_key_bytes()).decode('utf-8')}
-req = {'ephemeral_public_key': b64encode(ephemeral_public_key).decode('utf-8'),
-            'signature': b64encode(signature).decode('utf-8')}
-res = requests.post(service + "/session", headers=headers, json=req).json()
-server_ephemeral = b64decode(res['ephemeral_public_key'])
-server_signature = b64decode(res['signature'])
+headers = {'content-type': 'application/json','x-api-key': '4O8R5sCy889lR2IsUSJrgaekDTLIBcR11nIcYuRC'}
+print(headers)
+req = {"id": "dodom",'ephemeralKey': b64encode(ephemeral_public_key).decode('utf-8'),
+            'signedEphemeralKey': b64encode(signature).decode('utf-8')}
+res = requests.post(service , headers=headers, json=req).json()
+# server_ephemeral = b64decode(res['ephemeral_public_key'])
+# server_signature = b64decode(res['signature'])
+print(res)
 
 # check server signature
-server_key_pair.verify(server_ephemeral, server_signature)
+# server_key_pair.verify(server_ephemeral, server_signature)
 
 # get shared secret
-server_ephemeral = EphemeralKeyPair(KeyPair.from_public_key_bytes(server_ephemeral))
-shared_secret = my_ephemeral.create_shared_secret(server_ephemeral)
+# server_ephemeral = EphemeralKeyPair(KeyPair.from_public_key_bytes(server_ephemeral))
+# shared_secret = my_ephemeral.create_shared_secret(server_ephemeral)
 
 # use shared secret to encrypt
-headers = {'X-PublicKey': b64encode(my_key_pair.public_key_bytes()).decode('utf-8')}
-req = {'name': 'julian'}
-payload = b64encode(shared_secret.encrypt(json.dumps(req).encode('utf-8')))
-res = b64decode(requests.post(service + "/greeting", headers=headers, data=payload).text)
+# headers = {'X-PublicKey': b64encode(my_key_pair.public_key_bytes()).decode('utf-8')}
+# req = {'name': 'julian'}
+# payload = b64encode(shared_secret.encrypt(json.dumps(req).encode('utf-8')))
+# res = b64decode(requests.post(service + "/greeting", headers=headers, data=payload).text)
 
 # use shared secret to decrypt
-res = shared_secret.decrypt(res)
-print(res)
+# res = shared_secret.decrypt(res)
+# print(res)
