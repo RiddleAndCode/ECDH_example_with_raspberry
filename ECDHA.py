@@ -103,6 +103,7 @@ server_pub_key = "BJzNphRprGYTt7ioyifaRqMQQW758qBhZBAlMo6tUbo4C9GeQLUsI6CvjtFaVW
 server_key_pair = KeyPair.from_public_key_bytes(b64decode(server_pub_key))
 my_key_pair = SealKeyPair(seal)
 static_public_key = (b64encode(my_key_pair.public_key_bytes()).decode('utf-8'))
+dev_eui = b64encode((my_key_pair.public_key_bytes())[1:9]).decode('utf-8')
 # create ephemeral key pair and sign
 my_ephemeral = EphemeralKeyPair(KeyPair.generate())
 ephemeral_public_key = my_ephemeral.key.public_key_bytes()
@@ -111,8 +112,9 @@ signature = my_key_pair.sign(ephemeral_public_key)
 # get server ephemeral public key
 headers = {'content-type': 'application/json','x-api-key': '4O8R5sCy889lR2IsUSJrgaekDTLIBcR11nIcYuRC','x-static-pubkey': static_public_key}
 print(headers)
-req = {"id": "test2",'ephemeralKey': b64encode(ephemeral_public_key).decode('utf-8'),
+req = {"id": dev_eui,'ephemeralKey': b64encode(ephemeral_public_key).decode('utf-8'),
             'signedEphemeralKey': b64encode(signature).decode('utf-8')}
+print(req)
 res = requests.post(service , headers=headers, json=req).json()
 # server_ephemeral = b64decode(res['ephemeral_public_key'])
 # server_signature = b64decode(res['signature'])
